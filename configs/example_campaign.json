@@ -1,0 +1,1151 @@
+{
+  "target": {
+    "base_url": "http://127.0.0.1:8000"
+  },
+  "default_timeout_seconds": 30.0,
+  "logging": {
+    "output_dir": "logs"
+  },
+  "profiles": {
+    "browser_like": {
+      "persistent_session": true,
+      "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+      "source_ip": "198.51.100.10",
+      "headers": {
+        "Accept-Language": "en-US,en;q=0.9"
+      },
+      "fingerprint_headers": {
+        "Sec-CH-UA": "\"Chromium\";v=\"126\", \"Not.A/Brand\";v=\"99\"",
+        "Sec-CH-UA-Platform": "\"Windows\""
+      }
+    },
+    "scanner_like": {
+      "persistent_session": false,
+      "user_agent": "Mozilla/5.0 (compatible; AttackSimulator/1.0; +https://example.invalid)",
+      "source_ip": "198.51.100.200",
+      "headers": {
+        "Accept": "*/*"
+      },
+      "fingerprint_headers": {
+        "X-Scanner-Fingerprint": "scan-01"
+      }
+    }
+  },
+  "module_defaults": {
+    "reconnaissance": {
+      "request_order": ["browsing", "discovery"],
+      "delay_ms": 60,
+      "max_requests": 6,
+      "headers": {
+        "Accept-Language": "en-US,en;q=0.9"
+      },
+      "categories": ["browsing", "discovery"],
+      "extra_paths": ["/login/", "/register/", "/admin/", "/forgot-password"]
+    },
+    "brute_force": {
+      "login_path": "/login/",
+      "method": "POST",
+      "username_field": "username",
+      "password_field": "password",
+      "max_attempts": 5,
+      "delay_ms": 50,
+      "headers": {
+        "Accept-Language": "en-US,en;q=0.9"
+      },
+      "usernames": ["admin", "root", "test"],
+      "passwords": ["admin", "password", "123456"]
+    },
+    "sql_injection": {
+      "delay_ms": 75,
+      "headers": {
+        "Accept-Language": "en-US,en;q=0.8"
+      },
+      "payloads": [
+        "' OR '1'='1",
+        "' UNION SELECT NULL--",
+        "admin'--"
+      ],
+      "scenarios": [
+        {
+          "type": "parameter",
+          "label": "search-parameter",
+          "endpoint": "/search",
+          "method": "GET",
+          "parameter": "q",
+          "payloads": [
+            "' OR '1'='1",
+            "' UNION SELECT NULL--"
+          ]
+        },
+        {
+          "type": "login",
+          "label": "login-form",
+          "endpoint": "/login/",
+          "method": "POST",
+          "username_field": "username",
+          "password_field": "password",
+          "payloads": [
+            "admin'--",
+            "' OR '1'='1"
+          ]
+        },
+        {
+          "type": "endpoint-list",
+          "label": "product-and-api",
+          "method": "GET",
+          "parameter": "id",
+          "endpoints": [
+            {
+              "method": "GET",
+              "path": "/product/organic-acacia-honey/",
+              "parameters": ["slug"]
+            },
+            {
+              "method": "GET",
+              "path": "/product/wildflower-raw-honey/",
+              "parameters": ["slug"]
+            },
+            {
+              "method": "GET",
+              "path": "/api/v1/users/",
+              "parameters": []
+            },
+            {
+              "method": "GET",
+              "path": "/api/v1/orders/",
+              "parameters": []
+            },
+            {
+              "method": "GET",
+              "path": "/api/admin/users",
+              "parameters": []
+            }
+          ],
+          "payloads": [
+            "1' OR '1'='1",
+            "42 UNION SELECT NULL--"
+          ]
+        }
+      ]
+    },
+    "api_probe": {
+      "delay_ms": 60,
+      "headers": {
+        "Accept-Language": "en-US,en;q=0.9"
+      },
+      "phases": ["discovery", "interaction", "decoy", "persistent"],
+      "discovery_targets": [
+        {
+          "method": "GET",
+          "path": "/admin/",
+          "label": "admin-route"
+        },
+        {
+          "method": "GET",
+          "path": "/api",
+          "label": "api-root"
+        },
+        {
+          "method": "GET",
+          "path": "/api/health",
+          "label": "api-health"
+        },
+        {
+          "method": "GET",
+          "path": "/api/admin",
+          "label": "api-admin"
+        },
+        {
+          "method": "GET",
+          "path": "/api/admin/users",
+          "label": "api-admin-users"
+        },
+        {
+          "method": "GET",
+          "path": "/api/admin/settings",
+          "label": "api-admin-settings"
+        },
+        {
+          "method": "GET",
+          "path": "/api/admin/export/",
+          "label": "api-admin-export"
+        },
+        {
+          "method": "GET",
+          "path": "/api/decoy",
+          "label": "api-decoy"
+        },
+        {
+          "method": "GET",
+          "path": "/api/internal/status",
+          "label": "internal-status"
+        },
+        {
+          "method": "GET",
+          "path": "/api/internal/config",
+          "label": "internal-config"
+        },
+        {
+          "method": "GET",
+          "path": "/api/docs/",
+          "label": "api-docs"
+        },
+        {
+          "method": "GET",
+          "path": "/graphql/",
+          "label": "graphql"
+        },
+        {
+          "method": "GET",
+          "path": "/debug/",
+          "label": "debug"
+        }
+      ],
+      "return_targets": [
+        {
+          "method": "GET",
+          "path": "/api/admin",
+          "label": "api-admin-return"
+        },
+        {
+          "method": "POST",
+          "path": "/api/admin",
+          "label": "api-admin-post"
+        }
+      ]
+    }
+  },
+  "campaigns": {
+    "web_reconnaissance": {
+      "profile": "browser_like",
+      "description": "Website exploration, endpoint discovery, and API probing as a single browser-like journey",
+      "target_environment": {
+        "name": "honeypot-lab",
+        "base_url": "http://127.0.0.1:8000"
+      },
+      "steps": [
+        {
+          "phase": "website-exploration",
+          "module": "reconnaissance",
+          "delay_after_ms": 120,
+          "target_endpoints": ["/", "/shop/", "/blog/", "/login/", "/register/", "/admin/"],
+          "config": {
+            "request_order": ["browsing", "discovery"],
+            "delay_ms": 60,
+            "max_requests": 6,
+            "headers": {
+              "Accept-Language": "en-US,en;q=0.9"
+            },
+            "categories": ["browsing", "discovery"],
+            "extra_paths": ["/login/", "/register/", "/admin/", "/forgot-password"]
+          }
+        },
+        {
+          "phase": "endpoint-discovery",
+          "module": "api_probe",
+          "delay_before_ms": 100,
+          "target_endpoints": ["/admin/", "/api", "/api/health", "/api/admin", "/api/admin/users", "/api/admin/settings", "/api/admin/export/", "/api/decoy", "/api/internal/status", "/api/internal/config", "/api/docs/", "/graphql/", "/debug/"],
+          "config": {
+            "delay_ms": 30,
+            "headers": {
+              "Accept-Language": "en-US,en;q=0.9"
+            },
+            "phases": ["discovery", "decoy"],
+            "discovery_targets": [
+              {
+                "method": "GET",
+                "path": "/admin/",
+                "label": "admin-route"
+              },
+              {
+                "method": "GET",
+                "path": "/api",
+                "label": "api-root"
+              },
+              {
+                "method": "GET",
+                "path": "/api/health",
+                "label": "api-health"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin",
+                "label": "api-admin"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/users",
+                "label": "api-admin-users"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/settings",
+                "label": "api-admin-settings"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/export/",
+                "label": "api-admin-export"
+              },
+              {
+                "method": "GET",
+                "path": "/api/decoy",
+                "label": "api-decoy"
+              },
+              {
+                "method": "GET",
+                "path": "/api/internal/status",
+                "label": "internal-status"
+              },
+              {
+                "method": "GET",
+                "path": "/api/internal/config",
+                "label": "internal-config"
+              },
+              {
+                "method": "GET",
+                "path": "/api/docs/",
+                "label": "api-docs"
+              },
+              {
+                "method": "GET",
+                "path": "/graphql/",
+                "label": "graphql"
+              },
+              {
+                "method": "GET",
+                "path": "/debug/",
+                "label": "debug"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "authentication_attack": {
+      "profile": "browser_like",
+      "description": "Login page discovery followed by repeated authentication attempts and suspicious follow-up requests",
+      "target_environment": {
+        "name": "honeypot-lab",
+        "base_url": "http://127.0.0.1:8000"
+      },
+      "steps": [
+        {
+          "phase": "login-discovery",
+          "module": "reconnaissance",
+          "delay_after_ms": 80,
+          "target_endpoints": ["/", "/shop/", "/blog/", "/login/", "/register/", "/admin/"],
+          "config": {
+            "request_order": ["browsing", "discovery"],
+            "delay_ms": 60,
+            "max_requests": 6,
+            "headers": {
+              "Accept-Language": "en-US,en;q=0.9"
+            },
+            "categories": ["browsing", "discovery"],
+            "extra_paths": ["/login/", "/register/", "/admin/", "/forgot-password"]
+          }
+        },
+        {
+          "phase": "credential-guessing",
+          "module": "brute_force",
+          "delay_before_ms": 100,
+          "delay_after_ms": 120,
+          "target_endpoints": ["/login/"],
+          "config": {
+            "login_path": "/login/",
+            "method": "POST",
+            "max_attempts": 6,
+            "delay_ms": 120,
+            "headers": {
+              "Accept-Language": "en-US,en;q=0.9"
+            },
+            "usernames": ["admin", "operator"],
+            "passwords": ["password", "letmein", "Spring2026!"]
+          }
+        },
+        {
+          "phase": "post-auth-observation",
+          "module": "api_probe",
+          "delay_before_ms": 120,
+          "target_endpoints": ["/admin/", "/api", "/api/health", "/api/admin", "/api/admin/users", "/api/admin/settings", "/api/admin/export/", "/api/decoy", "/api/internal/status", "/api/internal/config", "/api/docs/", "/graphql/", "/debug/"],
+          "config": {
+            "delay_ms": 30,
+            "headers": {
+              "Accept-Language": "en-US,en;q=0.9"
+            },
+            "phases": ["interaction", "persistent", "decoy"],
+            "discovery_targets": [
+              {
+                "method": "GET",
+                "path": "/admin/",
+                "label": "admin-route"
+              },
+              {
+                "method": "GET",
+                "path": "/api",
+                "label": "api-root"
+              },
+              {
+                "method": "GET",
+                "path": "/api/health",
+                "label": "api-health"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin",
+                "label": "api-admin"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/users",
+                "label": "api-admin-users"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/settings",
+                "label": "api-admin-settings"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/export/",
+                "label": "api-admin-export"
+              },
+              {
+                "method": "GET",
+                "path": "/api/decoy",
+                "label": "api-decoy"
+              },
+              {
+                "method": "GET",
+                "path": "/api/internal/status",
+                "label": "internal-status"
+              },
+              {
+                "method": "GET",
+                "path": "/api/internal/config",
+                "label": "internal-config"
+              },
+              {
+                "method": "GET",
+                "path": "/api/docs/",
+                "label": "api-docs"
+              },
+              {
+                "method": "GET",
+                "path": "/graphql/",
+                "label": "graphql"
+              },
+              {
+                "method": "GET",
+                "path": "/debug/",
+                "label": "debug"
+              }
+            ],
+            "return_targets": [
+              {
+                "method": "POST",
+                "path": "/api/admin",
+                "label": "api-admin-post"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "full_web_attack_simulation": {
+      "profile": "browser_like",
+      "description": "Reconnaissance, brute force, SQL injection, and admin/API exploration as one correlated attacker journey",
+      "target_environment": {
+        "name": "honeypot-lab",
+        "base_url": "http://127.0.0.1:8000"
+      },
+      "steps": [
+        {
+          "phase": "reconnaissance",
+          "module": "reconnaissance",
+          "delay_after_ms": 120,
+          "target_endpoints": ["/", "/shop/", "/blog/", "/login/", "/register/", "/admin/"],
+          "config": {
+            "request_order": ["browsing", "discovery"],
+            "delay_ms": 60,
+            "max_requests": 6,
+            "headers": {
+              "Accept-Language": "en-US,en;q=0.9"
+            },
+            "categories": ["browsing", "discovery"],
+            "extra_paths": ["/login/", "/register/", "/admin/", "/forgot-password"]
+          }
+        },
+        {
+          "phase": "authentication-attack",
+          "module": "brute_force",
+          "delay_before_ms": 100,
+          "delay_after_ms": 100,
+          "target_endpoints": ["/login/"],
+          "config": {
+            "max_attempts": 4,
+            "delay_ms": 150,
+            "headers": {
+              "Accept-Language": "en-US,en;q=0.9"
+            },
+            "usernames": ["admin", "operator"],
+            "passwords": ["password", "letmein", "Spring2026!"]
+          }
+        },
+        {
+          "phase": "injection-attempt",
+          "module": "sql_injection",
+          "delay_before_ms": 100,
+          "delay_after_ms": 100,
+          "target_endpoints": ["/search", "/login/", "/product/organic-acacia-honey/", "/product/wildflower-raw-honey/", "/api/v1/users/", "/api/v1/orders/", "/api/admin/users"],
+          "config": {
+            "delay_ms": 100,
+            "headers": {
+              "Accept-Language": "en-US,en;q=0.8"
+            },
+            "scenarios": [
+              {
+                "type": "parameter",
+                "label": "search-parameter",
+                "endpoint": "/search",
+                "method": "GET",
+                "parameter": "q",
+                "payloads": [
+                  "' OR '1'='1",
+                  "' UNION SELECT NULL--"
+                ]
+              },
+              {
+                "type": "login",
+                "label": "login-form",
+                "endpoint": "/login/",
+                "method": "POST",
+                "username_field": "username",
+                "password_field": "password",
+                "payloads": [
+                  "admin'--",
+                  "' OR '1'='1"
+                ]
+              },
+              {
+                "type": "endpoint-list",
+                "label": "product-and-api",
+                "method": "GET",
+                "parameter": "id",
+                "endpoints": [
+                  {
+                    "method": "GET",
+                    "path": "/product/organic-acacia-honey/",
+                    "parameters": ["slug"]
+                  },
+                  {
+                    "method": "GET",
+                    "path": "/product/wildflower-raw-honey/",
+                    "parameters": ["slug"]
+                  },
+                  {
+                    "method": "GET",
+                    "path": "/api/v1/users/",
+                    "parameters": []
+                  },
+                  {
+                    "method": "GET",
+                    "path": "/api/v1/orders/",
+                    "parameters": []
+                  },
+                  {
+                    "method": "GET",
+                    "path": "/api/admin/users",
+                    "parameters": []
+                  }
+                ],
+                "payloads": [
+                  "1' OR '1'='1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "phase": "endpoint-exploration",
+          "module": "api_probe",
+          "delay_before_ms": 120,
+          "target_endpoints": ["/admin/", "/api", "/api/health", "/api/admin", "/api/admin/users", "/api/admin/settings", "/api/admin/export/", "/api/decoy", "/api/internal/status", "/api/internal/config", "/api/docs/", "/graphql/", "/debug/"],
+          "config": {
+            "delay_ms": 60,
+            "headers": {
+              "Accept-Language": "en-US,en;q=0.9"
+            },
+            "phases": ["discovery", "interaction", "decoy", "persistent"],
+            "discovery_targets": [
+              {
+                "method": "GET",
+                "path": "/admin/",
+                "label": "admin-route"
+              },
+              {
+                "method": "GET",
+                "path": "/api",
+                "label": "api-root"
+              },
+              {
+                "method": "GET",
+                "path": "/api/health",
+                "label": "api-health"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin",
+                "label": "api-admin"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/users",
+                "label": "api-admin-users"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/settings",
+                "label": "api-admin-settings"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/export/",
+                "label": "api-admin-export"
+              },
+              {
+                "method": "GET",
+                "path": "/api/decoy",
+                "label": "api-decoy"
+              },
+              {
+                "method": "GET",
+                "path": "/api/internal/status",
+                "label": "internal-status"
+              },
+              {
+                "method": "GET",
+                "path": "/api/internal/config",
+                "label": "internal-config"
+              },
+              {
+                "method": "GET",
+                "path": "/api/docs/",
+                "label": "api-docs"
+              },
+              {
+                "method": "GET",
+                "path": "/graphql/",
+                "label": "graphql"
+              },
+              {
+                "method": "GET",
+                "path": "/debug/",
+                "label": "debug"
+              }
+            ],
+            "return_targets": [
+              {
+                "method": "GET",
+                "path": "/api/admin",
+                "label": "api-admin-return"
+              },
+              {
+                "method": "POST",
+                "path": "/api/admin",
+                "label": "api-admin-post"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "scenarios": {
+    "browser_api_probe": {
+      "profile": "browser_like",
+      "description": "Browser-like endpoint discovery and follow-up interaction with persistent cookies",
+      "steps": [
+        {
+          "module": "api_probe",
+          "config": {
+            "delay_ms": 120,
+            "headers": {
+              "Accept-Language": "en-US,en;q=0.9"
+            },
+            "phases": ["discovery", "interaction", "persistent"],
+            "target_endpoints": ["/admin/", "/api", "/api/health", "/api/admin", "/api/admin/users", "/api/admin/settings", "/api/admin/export/", "/api/decoy", "/api/internal/status", "/api/internal/config", "/api/docs/", "/graphql/", "/debug/"],
+            "discovery_targets": [
+              {
+                "method": "GET",
+                "path": "/admin/",
+                "label": "admin-route"
+              },
+              {
+                "method": "GET",
+                "path": "/api",
+                "label": "api-root"
+              },
+              {
+                "method": "GET",
+                "path": "/api/health",
+                "label": "api-health"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin",
+                "label": "api-admin"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/users",
+                "label": "api-admin-users"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/settings",
+                "label": "api-admin-settings"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/export/",
+                "label": "api-admin-export"
+              },
+              {
+                "method": "GET",
+                "path": "/api/decoy",
+                "label": "api-decoy"
+              },
+              {
+                "method": "GET",
+                "path": "/api/internal/status",
+                "label": "internal-status"
+              },
+              {
+                "method": "GET",
+                "path": "/api/internal/config",
+                "label": "internal-config"
+              },
+              {
+                "method": "GET",
+                "path": "/api/docs/",
+                "label": "api-docs"
+              },
+              {
+                "method": "GET",
+                "path": "/graphql/",
+                "label": "graphql"
+              },
+              {
+                "method": "GET",
+                "path": "/debug/",
+                "label": "debug"
+              }
+            ],
+            "return_targets": [
+              {
+                "method": "GET",
+                "path": "/api/admin",
+                "label": "api-admin-return"
+              },
+              {
+                "method": "POST",
+                "path": "/api/admin",
+                "label": "api-admin-post"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "scanner_api_probe": {
+      "profile": "scanner_like",
+      "description": "Automated scanner that rapidly tests many endpoints without cookies",
+      "steps": [
+        {
+          "module": "api_probe",
+          "config": {
+            "delay_ms": 0,
+            "headers": {
+              "Accept": "*/*"
+            },
+            "phases": ["discovery", "decoy"],
+            "target_endpoints": ["/admin/", "/api", "/api/health", "/api/admin", "/api/admin/users", "/api/admin/settings", "/api/admin/export/", "/api/decoy", "/api/internal/status", "/api/internal/config", "/api/docs/", "/graphql/", "/debug/"],
+            "discovery_targets": [
+              {
+                "method": "GET",
+                "path": "/admin/",
+                "label": "admin-route"
+              },
+              {
+                "method": "GET",
+                "path": "/api",
+                "label": "api-root"
+              },
+              {
+                "method": "GET",
+                "path": "/api/health",
+                "label": "api-health"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin",
+                "label": "api-admin"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/users",
+                "label": "api-admin-users"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/settings",
+                "label": "api-admin-settings"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/export/",
+                "label": "api-admin-export"
+              },
+              {
+                "method": "GET",
+                "path": "/api/decoy",
+                "label": "api-decoy"
+              },
+              {
+                "method": "GET",
+                "path": "/api/internal/status",
+                "label": "internal-status"
+              },
+              {
+                "method": "GET",
+                "path": "/api/internal/config",
+                "label": "internal-config"
+              },
+              {
+                "method": "GET",
+                "path": "/api/docs/",
+                "label": "api-docs"
+              },
+              {
+                "method": "GET",
+                "path": "/graphql/",
+                "label": "graphql"
+              },
+              {
+                "method": "GET",
+                "path": "/debug/",
+                "label": "debug"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "persistent_api_probe": {
+      "profile": "browser_like",
+      "description": "Persistent attacker that returns to interesting resources and attempts follow-up actions",
+      "steps": [
+        {
+          "module": "api_probe",
+          "config": {
+            "delay_ms": 90,
+            "headers": {
+              "Accept-Language": "en-US,en;q=0.9"
+            },
+            "phases": ["discovery", "interaction", "persistent", "decoy"],
+            "target_endpoints": ["/admin/", "/api", "/api/health", "/api/admin", "/api/admin/users", "/api/admin/settings", "/api/admin/export/", "/api/decoy", "/api/internal/status", "/api/internal/config", "/api/docs/", "/graphql/", "/debug/"],
+            "discovery_targets": [
+              {
+                "method": "GET",
+                "path": "/admin/",
+                "label": "admin-route"
+              },
+              {
+                "method": "GET",
+                "path": "/api",
+                "label": "api-root"
+              },
+              {
+                "method": "GET",
+                "path": "/api/health",
+                "label": "api-health"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin",
+                "label": "api-admin"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/users",
+                "label": "api-admin-users"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/settings",
+                "label": "api-admin-settings"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/export/",
+                "label": "api-admin-export"
+              },
+              {
+                "method": "GET",
+                "path": "/api/decoy",
+                "label": "api-decoy"
+              },
+              {
+                "method": "GET",
+                "path": "/api/internal/status",
+                "label": "internal-status"
+              },
+              {
+                "method": "GET",
+                "path": "/api/internal/config",
+                "label": "internal-config"
+              },
+              {
+                "method": "GET",
+                "path": "/api/docs/",
+                "label": "api-docs"
+              },
+              {
+                "method": "GET",
+                "path": "/graphql/",
+                "label": "graphql"
+              },
+              {
+                "method": "GET",
+                "path": "/debug/",
+                "label": "debug"
+              }
+            ],
+            "return_targets": [
+              {
+                "method": "GET",
+                "path": "/api/admin",
+                "label": "api-admin-return"
+              },
+              {
+                "method": "POST",
+                "path": "/api/admin",
+                "label": "api-admin-post"
+              },
+              {
+                "method": "GET",
+                "path": "/api/decoy",
+                "label": "api-decoy-return"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "baseline_chain": {
+      "profile": "browser_like",
+      "description": "Reconnaissance, login attempts, SQL injection, and API exploration using a single logical attacker session",
+      "steps": [
+        {
+          "module": "reconnaissance",
+          "config": {
+            "request_order": ["browsing", "discovery"],
+            "delay_ms": 60,
+            "max_requests": 6,
+            "headers": {
+              "Accept-Language": "en-US,en;q=0.9"
+            },
+            "categories": ["browsing", "discovery"],
+            "extra_paths": ["/login/", "/register/", "/admin/", "/forgot-password"]
+          }
+        },
+        {
+          "module": "brute_force",
+          "config": {
+            "max_attempts": 4,
+            "delay_ms": 150,
+            "headers": {
+              "Accept-Language": "en-US,en;q=0.9"
+            },
+            "usernames": ["admin", "operator"],
+            "passwords": ["password", "letmein", "Spring2026!"]
+          }
+        },
+        {
+          "module": "sql_injection",
+          "config": {
+            "delay_ms": 100,
+            "headers": {
+              "Accept-Language": "en-US,en;q=0.8"
+            },
+            "scenarios": [
+              {
+                "type": "parameter",
+                "label": "search-parameter",
+                "endpoint": "/search",
+                "method": "GET",
+                "parameter": "q",
+                "payloads": [
+                  "' OR '1'='1",
+                  "' UNION SELECT NULL--"
+                ]
+              },
+              {
+                "type": "login",
+                "label": "login-form",
+                "endpoint": "/login/",
+                "method": "POST",
+                "username_field": "username",
+                "password_field": "password",
+                "payloads": [
+                  "admin'--",
+                  "' OR '1'='1"
+                ]
+              },
+              {
+                "type": "endpoint-list",
+                "label": "product-and-api",
+                "method": "GET",
+                "parameter": "id",
+                "endpoints": [
+                  {
+                    "method": "GET",
+                    "path": "/product/organic-acacia-honey/",
+                    "parameters": ["slug"]
+                  },
+                  {
+                    "method": "GET",
+                    "path": "/product/wildflower-raw-honey/",
+                    "parameters": ["slug"]
+                  },
+                  {
+                    "method": "GET",
+                    "path": "/api/v1/users/",
+                    "parameters": []
+                  },
+                  {
+                    "method": "GET",
+                    "path": "/api/v1/orders/",
+                    "parameters": []
+                  },
+                  {
+                    "method": "GET",
+                    "path": "/api/admin/users",
+                    "parameters": []
+                  }
+                ],
+                "payloads": [
+                  "1' OR '1'='1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "module": "api_probe",
+          "config": {
+            "delay_ms": 60,
+            "headers": {
+              "Accept-Language": "en-US,en;q=0.8"
+            },
+            "phases": ["discovery", "interaction", "decoy", "persistent"],
+            "target_endpoints": ["/admin/", "/api", "/api/health", "/api/admin", "/api/admin/users", "/api/admin/settings", "/api/admin/export/", "/api/decoy", "/api/internal/status", "/api/internal/config", "/api/docs/", "/graphql/", "/debug/"],
+            "discovery_targets": [
+              {
+                "method": "GET",
+                "path": "/admin/",
+                "label": "admin-route"
+              },
+              {
+                "method": "GET",
+                "path": "/api",
+                "label": "api-root"
+              },
+              {
+                "method": "GET",
+                "path": "/api/health",
+                "label": "api-health"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin",
+                "label": "api-admin"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/users",
+                "label": "api-admin-users"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/settings",
+                "label": "api-admin-settings"
+              },
+              {
+                "method": "GET",
+                "path": "/api/admin/export/",
+                "label": "api-admin-export"
+              },
+              {
+                "method": "GET",
+                "path": "/api/decoy",
+                "label": "api-decoy"
+              },
+              {
+                "method": "GET",
+                "path": "/api/internal/status",
+                "label": "internal-status"
+              },
+              {
+                "method": "GET",
+                "path": "/api/internal/config",
+                "label": "internal-config"
+              },
+              {
+                "method": "GET",
+                "path": "/api/docs/",
+                "label": "api-docs"
+              },
+              {
+                "method": "GET",
+                "path": "/graphql/",
+                "label": "graphql"
+              },
+              {
+                "method": "GET",
+                "path": "/debug/",
+                "label": "debug"
+              }
+            ],
+            "return_targets": [
+              {
+                "method": "GET",
+                "path": "/api/admin",
+                "label": "api-admin-return"
+              },
+              {
+                "method": "POST",
+                "path": "/api/admin",
+                "label": "api-admin-post"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "scanner_only": {
+      "profile": "scanner_like",
+      "description": "Lightweight scanner profile that avoids cookie persistence",
+      "steps": [
+        {
+          "module": "reconnaissance"
+        },
+        {
+          "module": "api_probe"
+        }
+      ]
+    }
+  }
+}

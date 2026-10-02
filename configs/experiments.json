@@ -1,0 +1,37 @@
+{
+  "default_config": "configs/example_campaign.json",
+  "experiments": {
+    "reconnaissance": {
+      "type": "campaign",
+      "name": "web_reconnaissance",
+      "profile": "scanner_like",
+      "duration_seconds": 20,
+      "wait_after_seconds": 5,
+      "honeypot_log": "honeypot_logs/web_reconnaissance_hp.jsonl"
+    },
+    "authentication": {
+      "type": "campaign",
+      "name": "authentication_attack",
+      "profile": "browser_like",
+      "duration_seconds": 30,
+      "wait_after_seconds": 10,
+      "honeypot_log": "honeypot_logs/authentication_hp.jsonl"
+    },
+    "webapp": {
+      "type": "module",
+      "name": "sql_injection",
+      "profile": "scanner_like",
+      "duration_seconds": 30,
+      "wait_after_seconds": 10,
+      "honeypot_log": "honeypot_logs/webapp_hp.jsonl"
+    },
+    "full_campaign": {
+      "type": "campaign",
+      "name": "full_web_attack_simulation",
+      "profile": "browser_like",
+      "duration_seconds": 90,
+      "wait_after_seconds": 20,
+      "honeypot_log": "honeypot_logs/honey-web.log"
+    }
+  }
+}

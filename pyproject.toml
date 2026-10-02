@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "attack-simulator"
+version = "0.1.0"
+description = "Modular attack simulation framework for honeypot evaluation"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+]
+
+[project.scripts]
+attack-simulator = "attack_simulator.cli:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["attack_simulator*"]
